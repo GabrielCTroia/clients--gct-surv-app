@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useDB, useFind } from "react-pouchdb";
 import { AsyncResultWrapper } from "ts-async-results";
 import { Form } from "./components/Form";
@@ -28,13 +28,7 @@ export const Main: React.FC<Props> = (props) => {
   });
 
   const getCurrentLocation = useCurrentLocation();
-  const [loadedImage, setLoadedImage] = useState<string>();
-
   const [loadingLocation, setLoadingLocation] = useState(false);
-
-  useEffect(() => {
-    console.log("docs updated", docs);
-  }, [docs]);
 
   return (
     <div className="main-container">
@@ -44,6 +38,7 @@ export const Main: React.FC<Props> = (props) => {
           {docs?.map((doc: Model) => (
             <div>
               {doc.name}, {doc.email}, {doc.lat}/{doc.lng}
+              {doc.image && <img src={doc.image} width={160} />}
             </div>
           ))}
         </div>
@@ -107,23 +102,27 @@ export const Main: React.FC<Props> = (props) => {
                 multiple={false}
                 onChange={(e) => {
                   const files = e.target.files;
-                  console.log("file", files);
+
                   if (!files) {
                     return;
                   }
                   const file = files[0];
                   loadFile(file)
                     .map((loadedFile) => {
-                      p.onChange("image", btoa(loadedFile));
-                      setLoadedImage(file.name);
+                      const value = loadedFile.toString();
+
+                      p.onChange("image", value);
                     })
                     .mapErr((err) => {
                       console.log("error loading file", e);
-                      setLoadedImage(undefined);
                     });
                 }}
               />
-              {loadedImage && <div>{loadedImage}</div>}
+              {p.model.image && (
+                <div>
+                  <img src={p.model.image} width="220px" />
+                </div>
+              )}
             </div>
 
             <button onClick={p.submit} disabled={!p.canSubmit}>
