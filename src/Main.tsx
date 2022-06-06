@@ -2,9 +2,16 @@ import { useState } from "react";
 import { useDB, useFind } from "react-pouchdb";
 import { AsyncResultWrapper } from "ts-async-results";
 import { Form } from "./components/Form";
+import { FormInput } from "./components/Form/components/FormInput";
 import { useCurrentLocation } from "./hooks";
 import { loadFile } from "./lib/loadFile";
-import "./Main.scss";
+import {
+  faFont,
+  faLocationPin,
+  faImage,
+  faArrowRight,
+  faAt,
+} from "@fortawesome/free-solid-svg-icons";
 
 type Props = {};
 
@@ -31,106 +38,146 @@ export const Main: React.FC<Props> = (props) => {
   const [loadingLocation, setLoadingLocation] = useState(false);
 
   return (
-    <div className="main-container">
-      {docs && (
-        <div>
-          All Docs
-          {docs?.map((doc: Model) => (
-            <div>
-              {doc.name}, {doc.email}, {doc.lat}/{doc.lng}
-              {doc.image && <img src={doc.image} width={160} />}
-            </div>
-          ))}
-        </div>
-      )}
-
-      <Form<Model>
-        key={docs?.length} // Reset the form each time a new item gets added
-        onSubmit={(model) =>
-          new AsyncResultWrapper(async () =>
-            db.post({ ...model, timestamp: Date.now() })
-          )
-            .map(() => undefined)
-            .mapErr(() => ({} as any))
-        }
-        render={(p) => (
-          <>
-            <div>
-              <label>Name</label>
-              <input
-                onChange={(e) => p.onChange("name", e.currentTarget.value)}
-                defaultValue={p.model.name}
+    <div className="bg-background-100 w-screen flex flex-col gap-5 justify-center mt-20 mb-20">
+      <div className="w-[30rem] m-auto relative">
+        <Form<Model>
+          key={docs?.length} // Reset the form each time a new item gets added
+          onSubmit={(model) =>
+            new AsyncResultWrapper(async () =>
+              db.post({ ...model, timestamp: Date.now() })
+            )
+              .map(() => undefined)
+              .mapErr(() => ({} as any))
+          }
+          render={(p) => (
+            <>
+              <FormInput
+                render={
+                  <div>
+                    <input
+                      className="placeholder:text-black focus:border-0 focus:outline-none"
+                      placeholder="Name"
+                      onChange={(e) =>
+                        p.onChange("name", e.currentTarget.value)
+                      }
+                      defaultValue={p.model.name}
+                    />
+                  </div>
+                }
+                icon={faFont}
               />
-            </div>
-            <div>
-              <label>Email</label>
-              <input
-                onChange={(e) => p.onChange("email", e.currentTarget.value)}
-                defaultValue={p.model.email}
+              <FormInput
+                render={
+                  <div>
+                    <input
+                      className="placeholder:text-black focus:border-0 focus:outline-none"
+                      placeholder="Email"
+                      onChange={(e) =>
+                        p.onChange("email", e.currentTarget.value)
+                      }
+                      defaultValue={p.model.email}
+                    />
+                  </div>
+                }
+                icon={faAt}
               />
-            </div>
+              <FormInput
+                render={
+                  <div className="flex gap-3  focus:border-0 focus:outline-none">
+                    <button
+                      onClick={() => {
+                        setLoadingLocation(true);
 
-            <div>
-              <label>Location</label>
+                        getCurrentLocation()
+                          .then((l) => {
+                            p.onChange("lat", String(l.coords.latitude));
+                            p.onChange("lng", String(l.coords.longitude));
+                          })
+                          .finally(() => {
+                            setLoadingLocation(false);
+                          });
+                      }}
+                      className="focus:border-0 focus:outline-none"
+                    >
+                      {loadingLocation ? `Loading...` : `Get Location`}
+                    </button>
+                    {p.model.lat && p.model.lng && (
+                      <span>{`Lat: ${p.model.lat} | Lng: ${p.model.lng}`}</span>
+                    )}
+                  </div>
+                }
+                icon={faLocationPin}
+              />
+              <FormInput
+                render={
+                  <div>
+                    <input
+                      className="text-text-400 bg-white file:mr-4 file:border-0 file:text-base file:bg-transparent bg-transparent"
+                      type="file"
+                      multiple={false}
+                      onChange={(e) => {
+                        const files = e.target.files;
 
-              {p.model.lat && p.model.lng && (
-                <span>
-                  Lat/Lng: {p.model.lat}, {p.model.lng}
-                </span>
-              )}
-              <button
-                onClick={() => {
-                  setLoadingLocation(true);
+                        if (!files) {
+                          return;
+                        }
+                        const file = files[0];
+                        loadFile(file)
+                          .map((loadedFile) => {
+                            const value = loadedFile.toString();
 
-                  getCurrentLocation()
-                    .then((l) => {
-                      p.onChange("lat", String(l.coords.latitude));
-                      p.onChange("lng", String(l.coords.longitude));
-                    })
-                    .finally(() => {
-                      setLoadingLocation(false);
-                    });
-                }}
-              >
-                {loadingLocation ? `Loading...` : `Get Location`}
-              </button>
-            </div>
-
-            <div>
-              <input
-                type="file"
-                multiple={false}
-                onChange={(e) => {
-                  const files = e.target.files;
-
-                  if (!files) {
-                    return;
-                  }
-                  const file = files[0];
-                  loadFile(file)
-                    .map((loadedFile) => {
-                      const value = loadedFile.toString();
-
-                      p.onChange("image", value);
-                    })
-                    .mapErr((err) => {
-                      console.log("error loading file", e);
-                    });
-                }}
+                            p.onChange("image", value);
+                          })
+                          .mapErr((err) => {
+                            console.log("error loading file", e);
+                          });
+                      }}
+                    />
+                  </div>
+                }
+                icon={faImage}
               />
               {p.model.image && (
-                <div>
-                  <img src={p.model.image} width="220px" />
+                <div className="w-40 bg-background-100 border-2 border-black font-main mb-10 drop-shadow-6xl">
+                  <img src={p.model.image} width="100%" />
                 </div>
               )}
-            </div>
-
-            <button onClick={p.submit} disabled={!p.canSubmit}>
-              Submit
-            </button>
-          </>
+              <FormInput
+                actionable
+                render={
+                  <button onClick={p.submit} disabled={!p.canSubmit}>
+                    Submit
+                  </button>
+                }
+                icon={faArrowRight}
+              />
+            </>
+          )}
+        />
+      </div>
+      <div className="w-[30rem] m-auto flex flex-col gap-1 justify-start">
+        <span className="flex font-bold text-3xl">All Records</span>
+        {docs && (
+          <div className="flex flex-col gap-10 justify-center text-base text-black font-main">
+            {docs?.map((doc: Model) => (
+              <div className="flex relative bg-primary-100 pl-5 pt-5 pb-5 ">
+                <div className="flex flex-col gap-3 border-white border-l-4  justify-center items-start pl-4 pt-5 pb-5">
+                  <div>{doc.name}</div>
+                  <div>{doc.email}</div>
+                  <div>
+                    Location: {doc.lat}|{doc.lng}
+                  </div>
+                </div>
+                {doc.image && (
+                  <div className="absolute drop-shadow-6xl -right-10 w-32 h-32 overflow-hidden">
+                    <img src={doc.image} width="100%" />
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
         )}
-      />
+      </div>
     </div>
   );
 };
