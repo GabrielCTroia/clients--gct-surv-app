@@ -1,9 +1,10 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useDB, useFind } from "react-pouchdb";
 import { AsyncResultWrapper } from "ts-async-results";
 import { Form } from "./components/Form";
 import { useCurrentLocation } from "./hooks";
-import './Main.scss';
+import { loadFile } from "./lib/loadFile";
+import "./Main.scss";
 
 type Props = {};
 
@@ -12,6 +13,7 @@ type Model = {
   email: string;
   lat: string;
   lng: string;
+  image: string;
 };
 
 export const Main: React.FC<Props> = (props) => {
@@ -26,8 +28,13 @@ export const Main: React.FC<Props> = (props) => {
   });
 
   const getCurrentLocation = useCurrentLocation();
+  const [loadedImage, setLoadedImage] = useState<string>();
 
   const [loadingLocation, setLoadingLocation] = useState(false);
+
+  useEffect(() => {
+    console.log("docs updated", docs);
+  }, [docs]);
 
   return (
     <div className="main-container">
@@ -92,6 +99,31 @@ export const Main: React.FC<Props> = (props) => {
               >
                 {loadingLocation ? `Loading...` : `Get Location`}
               </button>
+            </div>
+
+            <div>
+              <input
+                type="file"
+                multiple={false}
+                onChange={(e) => {
+                  const files = e.target.files;
+                  console.log("file", files);
+                  if (!files) {
+                    return;
+                  }
+                  const file = files[0];
+                  loadFile(file)
+                    .map((loadedFile) => {
+                      p.onChange("image", btoa(loadedFile));
+                      setLoadedImage(file.name);
+                    })
+                    .mapErr((err) => {
+                      console.log("error loading file", e);
+                      setLoadedImage(undefined);
+                    });
+                }}
+              />
+              {loadedImage && <div>{loadedImage}</div>}
             </div>
 
             <button onClick={p.submit} disabled={!p.canSubmit}>
