@@ -31,7 +31,11 @@ export const Main: React.FC<Props> = (props) => {
       timestamp: { $gte: null },
       // completed: filterByCompletedField[filter]
     },
-    sort: ["timestamp"],
+    sort: [
+      {
+        timestamp: "desc",
+      },
+    ],
   });
 
   const getCurrentLocation = useCurrentLocation();
@@ -165,7 +169,7 @@ export const Main: React.FC<Props> = (props) => {
                   <div>{doc.name}</div>
                   <div>{doc.email}</div>
                   <div>
-                    Location: {doc.lat}|{doc.lng}
+                    Location: {doc.lat} | {doc.lng}
                   </div>
                 </div>
                 {doc.image && (
