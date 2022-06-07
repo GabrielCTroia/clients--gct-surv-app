@@ -177,33 +177,35 @@ export const Main: React.FC<Props> = () => {
         />
       </div>
       <div className="w-[30rem] m-auto flex flex-col gap-1 justify-start">
-        <span className="flex font-bold text-3xl">All Records</span>
-        {rows && (
-          <div className="flex flex-col gap-10 justify-center text-base text-black font-main">
-            {rows.docs?.map((row) => {
-              const doc = row as unknown as Model;
+        {rows?.docs.length > 0 && (
+          <>
+            <span className="flex font-bold text-3xl">All Records</span>
+            <div className="flex flex-col gap-10 justify-center text-base text-black font-main">
+              {rows.docs?.map((row) => {
+                const doc = row as unknown as Model;
 
-              return (
-                <div
-                  className="flex relative bg-primary-100 pl-5 pt-5 pb-5 "
-                  key={doc._id}
-                >
-                  <div className="flex flex-col gap-3 border-white border-l-4  justify-center items-start pl-4 pt-5 pb-5">
-                    <div>{doc.name}</div>
-                    <div>{doc.email}</div>
-                    <div>
-                      Location: {doc.lat} | {doc.lng}
+                return (
+                  <div
+                    className="flex relative bg-primary-100 pl-5 pt-5 pb-5 "
+                    key={doc._id}
+                  >
+                    <div className="flex flex-col gap-3 border-white border-l-4  justify-center items-start pl-4 pt-5 pb-5">
+                      <div>{doc.name}</div>
+                      <div>{doc.email}</div>
+                      <div>
+                        Location: {doc.lat} | {doc.lng}
+                      </div>
                     </div>
+                    {doc.image && (
+                      <div className="absolute drop-shadow-6xl -right-10 w-32 h-32 overflow-hidden">
+                        <img src={doc.image} width="100%" />
+                      </div>
+                    )}
                   </div>
-                  {doc.image && (
-                    <div className="absolute drop-shadow-6xl -right-10 w-32 h-32 overflow-hidden">
-                      <img src={doc.image} width="100%" />
-                    </div>
-                  )}
-                </div>
-              );
-            })}
-          </div>
+                );
+              })}
+            </div>
+          </>
         )}
       </div>
     </div>

@@ -8,21 +8,5 @@ const PrefixedPouch = PouchDB.defaults({
 
 module.exports = function (app) {
   const pouchDB = expressPouchDB(PrefixedPouch);
-  // app is the Create-React-App dev server.
-  // Our databases will be available at http://localhost:3000/db/*
   app.use("/db", pouchDB);
-
-  console.log('pouchdb', PrefixedPouch);
-
-  // PrefixedPouch.db.changes({
-  //   since: "now",
-  // })
-  //   .on("change", function (change) {
-  //     console.log("db changes", change);
-  //     // received a change
-  //   })
-  //   .on("error", function (err) {
-  //     console.log("db change error", err);
-  //     // handle errors
-  //   });
 };
