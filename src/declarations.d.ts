@@ -1,5 +1,7 @@
 declare module "object-equals";
 
+declare module 'pouchdb-browser';
+
 declare module "react-pouchdb" {
   interface PouchDBProps extends PouchDB.Configuration.DatabaseConfiguration {
     name: string;
