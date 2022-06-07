@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { useDB, useFind } from "react-pouchdb";
 import { AsyncResultWrapper } from "ts-async-results";
 import { Form } from "./components/Form";
 import { FormInput } from "./components/Form/components/FormInput";
@@ -12,10 +11,13 @@ import {
   faArrowRight,
   faAt,
 } from "@fortawesome/free-solid-svg-icons";
+import { usePouch, useFind } from "use-pouchdb";
+import { Ok } from "ts-results";
 
 type Props = {};
 
 type Model = {
+  _id: string;
   name: string;
   email: string;
   lat: string;
@@ -23,13 +25,15 @@ type Model = {
   image: string;
 };
 
-export const Main: React.FC<Props> = (props) => {
-  const db = useDB();
+export const Main: React.FC<Props> = () => {
+  const db = usePouch();
 
-  const docs = useFind<Model>({
+  const rows = useFind<Model>({
     selector: {
       timestamp: { $gte: null },
-      // completed: filterByCompletedField[filter]
+    },
+    index: {
+      fields: ["timestamp"],
     },
     sort: [
       {
@@ -44,14 +48,27 @@ export const Main: React.FC<Props> = (props) => {
   return (
     <div className="bg-background-100 w-screen flex flex-col gap-5 justify-center mt-20 mb-20">
       <div className="w-[30rem] m-auto relative">
-        <Form<Model>
-          key={docs?.length} // Reset the form each time a new item gets added
+        <Form<Omit<Model, "_id">>
+          key={rows.docs?.length} // Reset the form each time a new item gets added
           onSubmit={(model) =>
             new AsyncResultWrapper(async () =>
-              db.post({ ...model, timestamp: Date.now() })
+              db
+                .put({
+                  _id: String(Date.now()), // give the document a unique id
+                  ...model,
+                  timestamp: Date.now(),
+                })
+                .then(
+                  (r) => {
+                    console.log("sumit r", r);
+                    return new Ok(r);
+                  },
+                  (e) => {
+                    console.log("submitt e", e);
+                    return e;
+                  }
+                )
             )
-              .map(() => undefined)
-              .mapErr(() => ({} as any))
           }
           render={(p) => (
             <>
@@ -161,24 +178,31 @@ export const Main: React.FC<Props> = (props) => {
       </div>
       <div className="w-[30rem] m-auto flex flex-col gap-1 justify-start">
         <span className="flex font-bold text-3xl">All Records</span>
-        {docs && (
+        {rows && (
           <div className="flex flex-col gap-10 justify-center text-base text-black font-main">
-            {docs?.map((doc: Model) => (
-              <div className="flex relative bg-primary-100 pl-5 pt-5 pb-5 ">
-                <div className="flex flex-col gap-3 border-white border-l-4  justify-center items-start pl-4 pt-5 pb-5">
-                  <div>{doc.name}</div>
-                  <div>{doc.email}</div>
-                  <div>
-                    Location: {doc.lat} | {doc.lng}
+            {rows.docs?.map((row) => {
+              const doc = row as unknown as Model;
+
+              return (
+                <div
+                  className="flex relative bg-primary-100 pl-5 pt-5 pb-5 "
+                  key={doc._id}
+                >
+                  <div className="flex flex-col gap-3 border-white border-l-4  justify-center items-start pl-4 pt-5 pb-5">
+                    <div>{doc.name}</div>
+                    <div>{doc.email}</div>
+                    <div>
+                      Location: {doc.lat} | {doc.lng}
+                    </div>
                   </div>
+                  {doc.image && (
+                    <div className="absolute drop-shadow-6xl -right-10 w-32 h-32 overflow-hidden">
+                      <img src={doc.image} width="100%" />
+                    </div>
+                  )}
                 </div>
-                {doc.image && (
-                  <div className="absolute drop-shadow-6xl -right-10 w-32 h-32 overflow-hidden">
-                    <img src={doc.image} width="100%" />
-                  </div>
-                )}
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>

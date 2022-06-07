@@ -5,7 +5,7 @@ import { Main } from "./Main";
 function App() {
   return (
     <div className="App">
-      <PouchDBProvider dbName="surv">
+      <PouchDBProvider localDbPath="surv" remoteDbPath="http://localhost:5984/surv">
         <Main />
       </PouchDBProvider>
     </div>
